@@ -2,11 +2,29 @@
 
 > **AI-powered multi-device orchestration system** — control Android phones, tablets, and other devices via voice commands or API. Built with FastAPI, Ollama (local LLM), and Tasker/MacroDroid.
 
-## 🚀 Live Demo
+## 🚀 Live Demo (Coming Soon)
 
-🎯 **Try it now:** https://ultron-demo.gadelz.repl.co
+Deploy your own instance:
+```bash
+git clone https://github.com/gadelz/ultron-multi-device.git
+cd ultron-multi-device
+pip install -r requirements.txt
+uvicorn app:app --port 8080
+```
 
-> Note: Demo has limited functionality (no real device connection, SQLite in-memory)
+**or one-click deploy:**
+
+### Render (Free)
+1. Go to https://render.com
+2. New → Web Service
+3. Connect repo: `gadelz/ultron-multi-device`
+4. Deploy!
+
+### Replit (Free, Instant)
+1. Go to https://replit.com
+2. Import from GitHub
+3. Select `gadelz/ultron-multi-device`
+4. Click Run
 
 ---
 
@@ -32,76 +50,189 @@
 
 ## ⚡ Quick Start
 
-### Deploy Your Own (Free)
+### Prerequisites
+
+- Python 3.11+
+- Android devices with Tasker/MacroDroid
+- Ollama (optional, for LLM-based parsing)
+
+### Installation
 
 ```bash
-# 1. Clone repo
+# Clone repository
 git clone https://github.com/gadelz/ultron-multi-device.git
 cd ultron-multi-device
 
-# 2. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 3. Run locally
-uvicorn main:app --port 8080 --reload
-
-# 4. Open demo
-open http://localhost:8080
+# Configure environment
+cp .env.example .env
+nano .env  # Edit with your settings
 ```
 
-### Deploy to Render (Free Tier)
+### Start Gateway
 
 ```bash
-# Connect your GitHub repo to Render
-# Service Type: Web Service
-# Build Command: pip install -r requirements.txt
-# Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+# Direct
+uvicorn app:app --host 0.0.0.0 --port 8080
+
+# Or with Docker
+docker-compose up -d
 ```
 
-Get free URL: `https://your-app.onrender.com`
+### Register Devices
 
----
+```bash
+curl -X POST http://localhost:8080/device/register \
+  -H "X-API-Key: your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "main_phone",
+    "flavor": "tasker",
+    "host": "192.168.1.50",
+    "port": 1820,
+    "path": "/tasker/trigger",
+    "auth_token": "your-device-token"
+  }'
+```
 
-## 🎮 Demo Features
+### Test the System
 
-1. **Register Devices** — Add Tasker/MacroDroid devices
-2. **Wake All** — Send wake command to all registered devices
-3. **Play YouTube** — Launch YouTube on all devices
-4. **Activity Log** — See all actions in real-time
+```bash
+# Test with fallback parser (no Ollama required)
+python scripts/test_llm_parser.py
+
+# Test with LLM (requires Ollama running)
+ollama pull llama3.2:latest
+python scripts/test_llm_parser.py
+```
 
 ---
 
 ## 📱 Android Setup
 
 ### Tasker (Primary Phone)
-1. Import profile from `android/tasker/`
-2. Set HTTP port to 1820
-3. Path: `/tasker/trigger`
-4. Auth: `Authorization: Bearer [token]`
+
+1. **Install Tasker** from Play Store
+2. **Import Profile**: `android/tasker/tasker_project.xml`
+3. **Configure HTTP Server**:
+   - Port: `1820`
+   - Path: `/tasker/trigger`
+   - Auth Header: `Authorization: Bearer <your-token>`
+4. **Create Tasks** for each action:
+   - `wake_unlock` → Turn Screen On + Dismiss Keyguard
+   - `play_media` → Launch YouTube with deep link
+   - `answer_call` → Answer incoming call
 
 ### MacroDroid (Secondary Devices)
-1. Trigger: HTTP Server → POST `/macrodroid/trigger:1880`
-2. Actions: Screen On → Dismiss Keyguard → Launch YouTube
+
+1. **Install MacroDroid** from Play Store
+2. **Create New Macro**:
+   - **Trigger**: HTTP Server → POST `/macrodroid/trigger` port `1880`
+   - **Actions**:
+     1. Screen On
+     2. Dismiss Keyguard
+     3. Launch App → `com.google.android.youtube`
+3. **Configure Auth**: Same token as main phone
 
 ---
 
 ## 🧠 LLM Integration
 
-- **Ollama** (local, free) — llama3.2, mistral
-- **OpenAI** (cloud) — gpt-4o, gpt-4o-mini
-- **Fallback parser** (no LLM needed)
+### Supported Providers
+
+| Provider | Local | API Key | Model |
+|----------|-------|---------|-------|
+| Ollama | ✅ | ❌ | llama3.2, mistral, etc. |
+| OpenAI | ❌ | ✅ | gpt-4o, gpt-4o-mini |
+| Compatible | ❌ | ✅ | vLLM, LocalAI, etc. |
+
+### Configuration
+
+```bash
+# .env file
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2:latest
+
+# OR for OpenAI
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+```
+
+### Fallback Parser
+
+When no LLM is available, the system uses a built-in keyword parser:
+
+```python
+# Examples of fallback parsing:
+"wake all devices"        → wake_all
+"play youtube on all"     → play_youtube_all
+"answer the call"         → answer_call
+"unlock everything"       → wake_all
+```
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 API Reference
+
+### Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Gateway health |
-| POST | `/webhook` | Dispatch to devices |
-| POST | `/broadcast` | Action to all devices |
-| POST | `/device/register` | Register device |
-| GET | `/devices` | List devices |
+| GET | `/health` | Gateway health check |
+| POST | `/webhook` | Dispatch command to devices |
+| POST | `/broadcast` | Fire action to all active devices |
+| POST | `/device/register` | Register a target device |
+| GET | `/devices` | List registered devices |
+
+### Request/Response Examples
+
+#### Register Device
+```bash
+POST /device/register
+{
+  "device_id": "main_phone",
+  "label": "Samsung S24",
+  "flavor": "tasker",
+  "host": "192.168.1.50",
+  "port": 1820,
+  "path": "/tasker/trigger",
+  "auth_token": "tok_main_phone"
+}
+```
+
+#### Dispatch Command
+```bash
+POST /webhook
+{
+  "intent": "wake_all",
+  "correlate_id": "req-001",
+  "targets": [
+    {
+      "device_id": "main_phone",
+      "action": "wake_unlock",
+      "delay_ms": 0,
+      "payload": {}
+    }
+  ]
+}
+```
+
+#### Response
+```json
+{
+  "correlate_id": "req-001",
+  "results": [
+    {
+      "device_id": "main_phone",
+      "status": "ok",
+      "result": {"success": true}
+    }
+  ]
+}
+```
 
 ---
 
@@ -110,74 +241,125 @@ Get free URL: `https://your-app.onrender.com`
 ```
 ultron-multi-device/
 ├── src/
-│   ├── gateway/server.py    # FastAPI gateway
-│   ├── llm/core.py          # LLM client
-│   ├── schemas/             # Pydantic models
-│   └── models/              # Database models
-├── android/                 # Tasker & MacroDroid configs
-├── scripts/                 # Setup automation
-├── docs/                    # Documentation
-├── main.py                  # Demo app entry point
-└── requirements.txt
+│   ├── gateway/
+│   │   ├── server.py        # FastAPI gateway server
+│   │   └── security.py      # Security middleware
+│   ├── workers/
+│   │   ├── worker.py        # AI core worker
+│   │   └── workflow.*.yml   # Workflow definitions
+│   ├── llm/
+│   │   └── core.py          # LLM client (Ollama/OpenAI)
+│   ├── schemas/
+│   │   └── schemas.py       # Pydantic models
+│   └── models/
+│       └── models.py        # SQLAlchemy models
+├── android/
+│   ├── tasker/
+│   │   └── tasker_project.xml
+│   └── macrodroid/
+│       └── macro.json
+├── scripts/
+│   ├── test_llm_parser.py   # Parser test script
+│   ├── install.sh           # Installation helper
+│   ├── setup-https.sh       # HTTPS setup
+│   ├── setup-firewall.sh    # Firewall setup
+│   └── setup-security.sh    # Complete security setup
+├── docs/
+│   ├── ARCHITECTURE.md      # Architecture documentation
+│   ├── SECURITY.md          # Security guide
+│   └── SECURITY_SETUP.md    # HTTPS/Firewall setup
+├── app.py                   # Demo app entry point
+├── main.py                  # Alternative entry point
+├── requirements.txt
+├── docker-compose.yml
+├── Dockerfile
+├── Procfile
+├── .env.example
+└── README.md
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Installation Issues
+
+#### Python Dependencies Not Found
+```bash
+pip install -r requirements.txt
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### Ollama Not Running
+```bash
+curl http://localhost:11434/api/tags
+ollama serve
+ollama pull llama3.2:latest
+```
+
+### Gateway Issues
+
+#### Port Already in Use
+```bash
+lsof -i :8080
+export ULTRON_PORT=8081
+uvicorn app:app --host 0.0.0.0 --port 8081
 ```
 
 ---
 
 ## 🔒 Security
 
-- API key authentication
-- Input validation (Pydantic)
-- Rate limiting (configurable)
-- HTTPS ready (nginx/caddy)
-- IP whitelist support
-
-See [docs/SECURITY.md](docs/SECURITY.md)
+See [docs/SECURITY.md](docs/SECURITY.md) for complete security guide.
 
 ---
 
-## 🐛 Troubleshooting
+## 🚢 Deploy to Cloud (Free)
 
-### Port Already in Use
+### Render
 ```bash
-lsof -i :8080
-# Kill process or change port
+# Connect GitHub repo to Render
+# Build: pip install -r requirements.txt
+# Start: uvicorn app:app --host 0.0.0.0 --port $PORT
 ```
 
-### Ollama Not Running
+### Replit
 ```bash
-ollama serve
-# Or use OpenAI: export LLM_PROVIDER=openai
+# Import from GitHub
+# Language: Python
+# Click Run
 ```
 
-### Database Error
+### Fly.io
 ```bash
-rm -f ultron.db
-python -c "from src.models.models import Base, engine; Base.metadata.create_all(engine)"
+fly launch --name ultron-gateway
+fly deploy
 ```
+
+See [DEPLOY.md](DEPLOY.md) for full instructions.
 
 ---
 
-## 📖 Full Documentation
+## 📝 License
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security Guide](docs/SECURITY.md)
-- [Security Setup](docs/SECURITY_SETUP.md)
+MIT License
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repo
-2. Create branch (`git checkout -b feature/amazing`)
+1. Fork the repository
+2. Create feature branch
 3. Commit changes
-4. Push and open PR
+4. Push and open Pull Request
 
 ---
 
 ## 📧 Support
 
 - **GitHub Issues**: https://github.com/gadelz/ultron-multi-device/issues
-- **Demo**: https://ultron-demo.gadelz.repl.co
+- **Documentation**: https://github.com/gadelz/ultron-multi-device/tree/main/docs
 
 ---
 
