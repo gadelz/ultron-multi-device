@@ -1,12 +1,16 @@
+version: "3.8"
 services:
-  gateway:
-    build: ./src/gateway
+  ultron-gateway:
+    build: .
     ports:
       - "8080:8080"
     environment:
-      - ULTRON_API_KEY=changeme-secret-key
-      - DATABASE_URL=sqlite:///./ultron.db
-      - ULTRON_BIND=0.0.0.0
+      - ULTRON_API_KEY=${ULTRON_API_KEY:-changeme}
+      - LLM_PROVIDER=openai
+      - DATABASE_URL=sqlite:////data/ultron.db
     volumes:
-      - ./src/gateway:/app
+      - ultron-data:/data
     restart: unless-stopped
+
+volumes:
+  ultron-data:
