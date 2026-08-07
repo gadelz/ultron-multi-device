@@ -20,7 +20,7 @@ class RegisteredDevice(Base):
 
 class ExecutionLog(Base):
     __tablename__ = "execution_logs"
-    id = Column(Integer, primary_key=True, auto_increment=True)
+    id = Column(Integer, primary_key=True)
     correlate_id = Column(String, index=True, nullable=True)
     device_id = Column(String, index=True)
     action = Column(String, nullable=False)

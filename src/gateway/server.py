@@ -44,7 +44,7 @@ async def verify_key(x_api_key: Optional[str] = Header(None)):
 class DeviceRegister(BaseModel):
     device_id: str
     label: Optional[str] = None
-    flavor: str = Field(..., regex="^(tasker|macrodroid)$")
+    flavor: str = Field(..., pattern="^(tasker|macrodroid)$")
     host: str
     port: int = 8080
     path: str = "/"
