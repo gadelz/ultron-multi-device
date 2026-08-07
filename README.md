@@ -4,29 +4,6 @@
 
 ## 🚀 Live Demo (Coming Soon)
 
-Deploy your own instance:
-```bash
-git clone https://github.com/gadelz/ultron-multi-device.git
-cd ultron-multi-device
-pip install -r requirements.txt
-uvicorn app:app --port 8080
-```
-
-**or one-click deploy:**
-
-### Render (Free)
-1. Go to https://render.com
-2. New → Web Service
-3. Connect repo: `gadelz/ultron-multi-device`
-4. Deploy!
-
-### Replit (Free, Instant)
-1. Go to https://replit.com
-2. Import from GitHub
-3. Select `gadelz/ultron-multi-device`
-4. Click Run
-
----
 
 ## 🏗️ Architecture
 
