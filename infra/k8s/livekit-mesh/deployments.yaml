@@ -1,0 +1,5 @@
+livekit-server: latest
+postgres: 15
+redis: 7
+turn-server: coturn/coturn
+nebula: nebula-bundle:latest

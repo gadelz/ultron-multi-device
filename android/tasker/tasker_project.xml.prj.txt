@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Task backupVersion="3.2">
+  <Project backup_detail="1" backup_credits="1" backup_locale="" backup_manifest="1" backup_profile="1" backup_scenes="1" backup_script="0" backup_smoothness="0" backup_theme="1" backup_vars="1" backup_version="3.2" description="ULTron MultiDevice Trigger" enabled="1" name="ULTron Tasks" parent="" trackball_scrolling="0">
+    <Profile backup_detail="1" created="1869044400000" description="Receive HTTP POST from gateway and fire unlock + youtube" enabled="1" locked="0" name="ULTron HTTP Listener" network="1" priority="" restricting="0">
+      <Scene/>
+      <Task>
+        <categoria>
+          <categoria>
+            <nulo/>
+            <klar>Receive HTTP Get Event</klar>
+            <config>
+              <headers>
+                <header>
+                  <valor>Authorization:Bearer tok_main_phone</valor>
+                </header>
+              </headers>
+              <method>0</method>
+              <port>1820</port>
+              <request_headers>1</request_headers>
+              <request_path>/tasker/trigger</request_path>
+              <timeout>10000</timeout>
+              <variable_structure>%http_data</variable_structure>
+            </config>
+            <clar>
+              <Task/>
+            </klar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+        <categoria>
+          <categoria>
+            <klar>Parse JSON payload</klar>
+            <config>
+              <item>
+                <csv>0</csv>
+                <json>1</json>
+                <una_entrada>1</una_entrada>
+                <nombre_variable>payload</nombre_variable>
+                <val>%http_data</val>
+              </item>
+            </config>
+            <clar>
+              <Task/>
+            </klar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+        <categoria>
+          <categoria>
+            <klar>Turn Screen On (WAKE)</klar>
+            <config>
+              <brightness>50</brightness>
+              <flash>1</flash>
+              <lock>0</lock>
+            </config>
+            <clar>
+              <Task/>
+            </klar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+        <categoria>
+          <categoria>
+            <klar>Dismiss Keyguard (unlock if possible without biometric)</klar>
+            <config>
+              <lock>0</lock>
+            </config>
+            <clar>
+              <Task/>
+            </clar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+        <categoria>
+          <categoria>
+            <klar>If action == answer_call, answer nearest incoming call</klar>
+            <config>
+              <if>
+                <reg>%json(action) eq answer_call</reg>
+              </if>
+            </config>
+            <clar>
+              <Task>
+                <categoria>
+                  <categoria>
+                    <klar>Answer Call</klar>
+                  </categoria>
+                </categoria>
+              </Task>
+            </clar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+        <categoria>
+          <categoria>
+            <klar>If action == play_media, launch YouTube with deep link or search</klar>
+            <config>
+              <if>
+                <reg>%json(action) eq play_media</reg>
+              </if>
+            </config>
+            <clar>
+              <Task>
+                <categoria>
+                  <categoria>
+                    <klar>Set %YT_URI as vnd.youtube:<url if present></klar>
+                  </categoria>
+                </categoria>
+                <Priority>70</Priority>
+                <categoria>
+                  <categoria>
+                    <klar>Open URI %YT_URI</klar>
+                  </categoria>
+                </categoria>
+              </Task>
+            </clar>
+          </categoria>
+        </categoria>
+        <Priority>70</Priority>
+      </Task>
+    </Profile>
+  </Project>
+</Task>

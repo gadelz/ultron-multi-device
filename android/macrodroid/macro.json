@@ -1,0 +1,50 @@
+{
+  "name": "ULTron MultiDevice Trigger",
+  "constraints": [
+    {
+      "type": "HttpTrigger",
+      "path": "/macrodroid/trigger",
+      "port": 1880,
+      "method": "POST",
+      "jsonBody": true,
+      "auth_header": "Authorization",
+      "auth_value": "Bearer tok_sec"
+    },
+    {
+      "type": "ScriptCondition",
+      "language": "javascript",
+      "code": "var d = JSON.parse(uri); if (!d || !d.action) return false; return true;"
+    }
+  ],
+  "actions": [
+    { "type": "ScreenOn", "brightness": 50, "flash": true },
+    { "type": "KeyguardDismiss", "secure_only": false },
+    {
+      "type": "If",
+      "condition_field": "action",
+      "operator": "==",
+      "value": "play_media",
+      "then_block": [
+        {
+          "type": "LaunchApp",
+          "package": "com.google.android.youtube",
+          "uri": "{json.payload.query}",
+          "deep_link": "{json.payload.deep_link}"
+        }
+      ],
+      "else_if": [
+        {
+          "condition_field": "action",
+          "operator": "==",
+          "value": "wake_unlock",
+          "then_block": [
+            {
+              "type": "LaunchApp",
+              "package": "com.android.settings"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

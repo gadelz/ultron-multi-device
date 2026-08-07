@@ -1,0 +1,50 @@
+{
+  "project": "ULTron Multi-Device Automation",
+  "components": {
+    "ai_core": {
+      "signals": ["whisper.transcript", "llm.parsed_intent"],
+      "role": "Transform human command -> structured Command JSON",
+      "deliver_to": ["gateway:/webhook"],
+      "local_executables": ["worker.py --stdin"]
+    },
+    "gateway": {
+      "image": "python:3.11-slim (fastapi+uvicorn+sqlalchemy+httpx)",
+      "port": 8080,
+      "auth": "X-API-Key / ULTRON_API_KEY",
+      "endpoints": {
+        "POST /webhook": {
+          "expects": "schemas.Command",
+          "does": "schedule + fire across Devices",
+          "returns": "correlate_id + per-device results"
+        },
+        "POST /broadcast": {
+          "expects": "single action + payload",
+          "does": "fire action to every active device"
+        },
+        "POST /device/register": {
+          "expects": "schemas.DeviceRegister",
+          "does": "upsert RegisteredDevice entry"
+        },
+        "GET /devices": {
+          "returns": "list of registered active devices"
+        }
+      },
+      "worker_concurrency": "asyncio.gather (configurable)"
+    },
+    "devices": {
+      "main_phone": {
+        "role": "Primary controller + answer incoming call",
+        "listener": "Tasker HTTP Get /tasker/trigger",
+        "actions": ["wake_unlock", "answer_call", "play_media"]
+      },
+      "secondary_1": {
+        "role": "Secondary orchestrator / output stream",
+        "listener": "MacroDroid Web Trigger"
+      },
+      "secondary_2": {
+        "role": "Secondary orchestrator / audio sink",
+        "listener": "MacroDroid Web Trigger"
+      }
+    }
+  }
+}

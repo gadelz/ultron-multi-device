@@ -1,0 +1,67 @@
+---
+workflow:
+  intent: wake_all_play_youtube
+  key: wake_all_play_youtube
+  correlate_id: auto UUID v4
+
+  devices:
+    - device_id: main_phone
+      label: "Samsung S24 — Controller & Call Receiver"
+      flavor: tasker
+      host: 192.168.1.50
+      port: 1820
+      path: /tasker/trigger
+      auth_token: tok_main_phone
+    - device_id: secondary_1
+      label: "Pixel 7 — Node Left"
+      flavor: macrodroid
+      host: 192.168.1.51
+      port: 1880
+      path: /macrodroid/trigger
+      auth_token: tok_sec1
+    - device_id: secondary_2
+      label: "Redmi Note 13 — Node Right"
+      flavor: macrodroid
+      host: 192.168.1.52
+      port: 1880
+      path: /macrodroid/trigger
+      auth_token: tok_sec2
+
+  actions_per_device:
+    - action: wake_unlock
+      delay_ms: 0
+      payload:
+        wake_package: "com.android.systemui"
+    - action: play_media
+      delay_ms: 800
+      payload:
+        app: "com.google.android.youtube"
+        deep_link: "vnd.youtube://"
+        query: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        play: true
+
+  main_phone_specific:
+    - action: answer_call
+      delay_ms: 1000
+      payload:
+        contact: "Ultron"
+
+  flow:
+    - step: parse_intent
+      input: user_transcript
+      prompt: >
+        Extract intent from transcript. Recognise 'wake all and play youtube',
+        'unlock everything + play media', 'sync all devices', etc.
+        Map to wake_all_play_youtube. Return JSON.
+    - step: dispatch
+      endpoint: POST http://gateway.local:8080/webhook
+      body:
+        intent: wake_all_play_youtube
+        correlate_id: "{{ uuid() }}"
+        targets: "{{ resolved_devices }}"
+    - step: confirm
+      output: "{{ device_statuses }}"
+
+  retries:
+    per_device: 2
+    backoff_ms: 500
