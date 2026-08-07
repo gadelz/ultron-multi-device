@@ -391,4 +391,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built with ❤️ by gadelz**
+**Built with by gadelz**
