@@ -2,6 +2,45 @@
 
 > **AI-powered multi-device orchestration system** — control Android phones, tablets, and other devices via voice commands or API. Built with FastAPI, Ollama (local LLM), and Tasker/MacroDroid.
 
+## 🔒 Security Overview
+
+**Last Audited**: 2026-08-07  
+**Security Level**: Production-ready (with configuration)
+
+### Current Security Measures
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| API Key Authentication | ✅ Implemented | `X-API-Key` header required |
+| Input Validation | ✅ Implemented | Pydantic models with pattern matching |
+| Request Logging | ✅ Implemented | All requests logged with IP |
+| Rate Limiting | ⚠️ Configurable | See SECURITY.md |
+| HTTPS Support | ⚠️ Manual setup | See SECURITY.md |
+| Token Hashing | ❌ TODO | Planned for v0.2 |
+
+### Critical Security Actions Required
+
+**Before production deployment:**
+
+1. **Change default API key**
+   ```bash
+   ULTRON_API_KEY=$(openssl rand -hex 32)
+   echo "ULTRON_API_KEY=$ULTRON_API_KEY" >> .env
+   ```
+
+2. **Enable HTTPS**
+   ```bash
+   openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+   ```
+
+3. **Configure IP whitelist**
+   ```bash
+   # In .env
+   ALLOWED_IPS=192.168.1.0/24
+   ```
+
+See [SECURITY.md](SECURITY.md) for complete security guide.
+
 ## 🏗️ Architecture
 
 ```
@@ -173,7 +212,7 @@ POST /device/register
 ```bash
 POST /webhook
 {
-  "intent": "wake_all_play_youtube",
+  "intent": "wake_all",
   "correlate_id": "req-001",
   "targets": [
     {
@@ -181,16 +220,6 @@ POST /webhook
       "action": "wake_unlock",
       "delay_ms": 0,
       "payload": {}
-    },
-    {
-      "device_id": "main_phone",
-      "action": "play_media",
-      "delay_ms": 800,
-      "payload": {
-        "app": "com.google.android.youtube",
-        "deep_link": "vnd.youtube://",
-        "query": "https://youtube.com/watch?v=xyz"
-      }
     }
   ]
 }
@@ -217,7 +246,8 @@ ultron-multi-device/
 ├── src/
 │   ├── gateway/
 │   │   ├── server.py        # FastAPI gateway server
-│   │   └── requirements.txt
+│   │   ├── security.py      # Security middleware
+│   │   └── auth.py          # Token-based auth
 │   ├── workers/
 │   │   ├── worker.py        # AI core worker
 │   │   └── workflow.*.yml   # Workflow definitions
@@ -237,7 +267,7 @@ ultron-multi-device/
 │   └── install.sh           # Installation helper
 ├── docs/
 │   ├── ARCHITECTURE.md      # Architecture documentation
-│   └── components.json      # Component specs
+│   └── SECURITY.md          # Security guide
 ├── requirements.txt
 ├── docker-compose.yml
 ├── .env.example
@@ -344,20 +374,15 @@ export LLM_MODEL=phi3:latest  # Faster inference
 
 ## 🔒 Security
 
-### API Keys
-- Use strong random API keys for `ULTRON_API_KEY`
-- Store in `.env` file, never commit to git
-- Rotate keys periodically
+See [SECURITY.md](SECURITY.md) for complete security guide.
 
-### Network Security
-- Run gateway behind reverse proxy (nginx/caddy) in production
-- Use HTTPS for all API endpoints
-- Restrict device IPs via firewall rules
-
-### Android App Security
-- Use unique tokens per device
-- Enable HTTPS in Tasker/MacroDroid if possible
-- Regularly audit device access
+### Quick Security Checklist
+- [ ] Change default API key
+- [ ] Enable HTTPS
+- [ ] Configure IP whitelist
+- [ ] Set up firewall rules
+- [ ] Enable rate limiting
+- [ ] Rotate device tokens quarterly
 
 ## 🚢 Docker Deployment
 
@@ -388,6 +413,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - **GitHub Issues**: https://github.com/gadelz/ultron-multi-device/issues
 - **Documentation**: https://github.com/gadelz/ultron-multi-device/tree/main/docs
+- **Security**: security.md
 
 ---
 
